@@ -110,12 +110,21 @@ def build_desktop_file(duplicates, directory_to_scan):
 
 
 def exit_program():
-    """Cleanly close program giving time for reading outputs"""
-    print('\nHave a great day')
-    time.sleep(5)
-    raise SystemExit
+    """Cleanly close program, giving time for reading outputs. Or go back to
+    the main menu in file_manipulator
+    """
+    print('Do you want to return to the main menu?')
+    return_to_file_manipulator = str(input('"Y" for yes. Anything else'
+                                           ' for no. '))
+    if return_to_file_manipulator.casefold() == 'y':
+        return None
+    else:
+        print('\nHave a great day')
+        time.sleep(5)
+        raise SystemExit
 
 
 # start the program
 if __name__ == "__main__":
     start()
+
