@@ -98,10 +98,12 @@ def build_file_list_to_scan(find, replacement):
     if len(files_to_change) > 0:
         proceed_with_write = str(input(f'\n\nThe file(s)\n\n{files_to_change}'
                                        f'\n\nwill now be modified.'
-                                       f'\nAll text "{find}" will be replaced with'
-                                       f' "{replacement}".'
-                                       f'\n\nIt\'s recommended that you have a backup'
-                                       f' of the files that will be modified.'
+                                       f'\nAll text "{find}" '
+                                       f'will be replaced with '
+                                       f'"{replacement}".'
+                                       f'\n\nIt\'s recommended that you have '
+                                       f'a backup of the files that will be '
+                                       f'modified.'
                                        f'\n\nDo you wish to proceed? '
                                        f'Y for yes, anything else to exit: '))
         # Exit program
@@ -109,7 +111,8 @@ def build_file_list_to_scan(find, replacement):
             exit_program()
 
     else:
-        print(f'\nThere are no files ending with extension "{file_extension}."')
+        print(f'\nThere are no files ending with '
+              f'extension "{file_extension}."')
         exit_program()
 
     return files_to_change
@@ -156,10 +159,18 @@ def save_to_disk(output_modified_file):
 
 
 def exit_program():
-    """Simple function to exit program"""
-    print('\nHave a great day!!!')
-    time.sleep(5)
-    raise SystemExit
+    """Cleanly close program, giving time for reading outputs. Or go back to
+    the main menu in file_manipulator
+    """
+    print('Do you want to return to the main menu?')
+    return_to_file_manipulator = str(input('"Y" for yes. Anything else'
+                                           ' for no. '))
+    if return_to_file_manipulator.casefold() == 'y':
+        return None
+    else:
+        print('\nHave a great day')
+        time.sleep(5)
+        raise SystemExit
 
 
 if __name__ == "__main__":
