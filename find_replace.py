@@ -161,6 +161,7 @@ def save_to_disk(output_modified_file):
 def exit_program():
     """Cleanly close program, giving time for reading outputs. Or go back to
     the main menu in file_manipulator
+
     """
     print('Do you want to return to the main menu?')
     return_to_file_manipulator = str(input('"Y" for yes. Anything else'
