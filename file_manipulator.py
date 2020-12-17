@@ -4,6 +4,7 @@ I expect this program to grow as I, and the community, grows.
 
 import time
 import linux_name_checker
+import find_replace
 
 
 def start():
@@ -11,18 +12,19 @@ def start():
     while True:
         print('\nPlease choose from the following list:')
         print('"1" to find and replace text in text files')
-        print('"2" to scan Linux folders for files that would \
-        cause duplicates if copied to Windows.')
+        print('"2" to scan Linux folders for files that would cause '
+              'duplicates if copied to Windows.')
         program_to_open = str(input('"Q" to quit and end the program. '))
 
         if program_to_open in ('Q', 'q'):
             exit_program()
         elif program_to_open == '1':
-            pass
+            find_replace.start()
         elif program_to_open == '2':
-            print(linux_name_checker.start())
+            linux_name_checker.start()
+
         else:
-            print(f'"{program_to_open}" wasn\'t a valid entry. '
+            print(f'\n"{program_to_open}" wasn\'t a valid entry. '
                   f'please try again.\n')
 
 
