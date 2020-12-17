@@ -5,7 +5,7 @@ import os
 import time
 
 
-def main():
+def start():
     """All other functions will be called from here"""
     print(f'\nThe current working directory is "{os.getcwd()}"\n')
     change_cwd = str(input('Change this Directory? Y for Yes,'
@@ -80,7 +80,10 @@ def find_replace_text():
 
 
 def build_file_list_to_scan(find, replacement):
-    """Build a list of files to scan"""
+    """Build a list of files to scan
+    :Param: String find: text to find in the document
+    :Param: String replacement: found text will be replaced
+    """
     files_to_change = []
 
     # Specify file extension
@@ -96,13 +99,13 @@ def build_file_list_to_scan(find, replacement):
 
     # Proceed or exit
     if len(files_to_change) > 0:
-        proceed_with_write = str(input(f'\n\nThe file(s)\n\n{files_to_change}'
-                                       f'\n\nwill now be modified.'
+        proceed_with_write = str(input(f'\nThe file(s)\n\n{files_to_change}'
+                                       f'\n\nmay be modified.'
                                        f'\nAll text "{find}" '
                                        f'will be replaced with '
                                        f'"{replacement}".'
                                        f'\n\nIt\'s recommended that you have '
-                                       f'a backup of the files that will be '
+                                       f'a backup of the files that may be '
                                        f'modified.'
                                        f'\n\nDo you wish to proceed? '
                                        f'Y for yes, anything else to exit: '))
@@ -119,7 +122,12 @@ def build_file_list_to_scan(find, replacement):
 
 
 def modify_files(find, replacement, files_to_change):
-    """This function will write to disk"""
+    """This function will write to disk
+    :Param: String find: text to find in the document
+    :Param: String replacement: found text will be replaced
+    :Param: List files_to_change: files that will be scanned and modified
+    if String find is found.
+    """
     output_modified_file = ''
 
     # Overwrite only files that change
@@ -140,7 +148,10 @@ def modify_files(find, replacement, files_to_change):
 
 
 def save_to_disk(output_modified_file):
-    """If files were modified save list to disk"""
+    """If files were modified save list to disk
+    :Param: String output_modified_file: string with a list of all the files
+    that was modified.
+    """
     if len(output_modified_file) > 0:
         # Print the number of files changed
         changed_file_count = output_modified_file.count('\n')
@@ -149,13 +160,13 @@ def save_to_disk(output_modified_file):
         else:
             print(f'\nThere were {changed_file_count} files modified.')
         print(f'\nThe list of changes are saved in folder'
-              f' {os.getcwd()}, named "0_modified_files.txt".')
+              f' {os.getcwd()}, named "0_modified_files.txt".\n')
         with open('0_modified_files.txt', 'w') as modified_file_list:
             modified_file_list.write(f'{output_modified_file}')
 
     else:
-        print('\nYour find/replace criteria yielded no changes.'
-              ' No files were modified.')
+        print('\nYour find/replace criteria yielded no changes. '
+              'No files were modified.')
 
 
 def exit_program():
@@ -175,4 +186,4 @@ def exit_program():
 
 
 if __name__ == "__main__":
-    main()
+    start()
