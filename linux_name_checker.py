@@ -86,7 +86,7 @@ def directory_crawler(top_folder):
     if len(duplicates) > 0:
         build_desktop_file(duplicates, top_folder)
     else:
-        print('There were no names found that would conflict in Windows')
+        print('There were no names found that would conflict in Windows\n')
     exit_program()
 
 
