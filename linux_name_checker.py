@@ -124,7 +124,5 @@ def exit_program():
         raise SystemExit
 
 
-# start the program
 if __name__ == "__main__":
     start()
-
