@@ -89,6 +89,9 @@ def build_file_list_to_scan(find, replacement):
     # Specify file extension
     file_extension = str(input('\nSpecify the file extension of the files'
                                ' you wish to change: '))
+    # Scan subdirectories too?
+    scan_subdirectories = str(input('\nScan subdirectories too? "Y" '
+                                    'for yes: '))
 
     # Add files to files_to_change list
     for path, _, filenames in os.walk("."):
@@ -96,6 +99,19 @@ def build_file_list_to_scan(find, replacement):
             for file in filenames:
                 if file.endswith(file_extension):
                     files_to_change.append(file)
+        # Add entries from subdirectories
+        if path != '.' and scan_subdirectories.casefold() == 'y':
+            for file in filenames:
+                if file.endswith(file_extension):
+                    files_to_change.append(os.getcwd() +
+                                           path[1::] + '/' + file)
+    # Change '/' to '\' if on Windows
+    if os.name == 'nt':
+        renaming_list = []
+        for file_name in files_to_change:
+            file_name = file_name.replace('/', '\\')
+            renaming_list.append(file_name)
+        files_to_change = renaming_list
 
     # Proceed or exit
     if len(files_to_change) > 0:
@@ -110,7 +126,7 @@ def build_file_list_to_scan(find, replacement):
                                        f'\n\nDo you wish to proceed? '
                                        f'Y for yes, anything else to exit: '))
         # Exit program
-        if proceed_with_write.lower() not in ('y', 'yes'):
+        if proceed_with_write.casefold() != 'y':
             exit_program()
 
     else:
@@ -179,10 +195,9 @@ def exit_program():
                                            ' for no. '))
     if return_to_file_manipulator.casefold() == 'y':
         return None
-    else:
-        print('\nHave a great day')
-        time.sleep(5)
-        raise SystemExit
+    print('\nHave a great day')
+    time.sleep(5)
+    raise SystemExit
 
 
 if __name__ == "__main__":
