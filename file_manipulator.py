@@ -25,7 +25,7 @@ def start():
 
         else:
             print(f'\n"{program_to_open}" wasn\'t a valid entry. '
-                  f'please try again.\n')
+                  f'Please try again.\n')
 
 
 def exit_program():
@@ -37,4 +37,3 @@ def exit_program():
 
 if __name__ == "__main__":
     start()
-
