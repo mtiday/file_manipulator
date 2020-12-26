@@ -6,31 +6,52 @@ import time
 
 
 def start():
-    """All other functions will be called from here"""
-    print(f'\nThe current working directory is "{os.getcwd()}"\n')
+    """All other functions will be called from here
+    :Param: Boolean continue_executing: Continue with function calls
+    if the user doesn't want to quit
+    :Param: String output_modified_files:
+    find = ''
+    replacement = ''
+    files_to_change = ["""
+    continue_executing = True
+    output_modified_files = ''
+    find = ''
+    replacement = ''
+    files_to_change = []
+
+    print(f'\nThe currentfiles_to_change = {files_to_change} '
+          f'working directory is "{os.getcwd()}"\n')
     change_cwd = str(input('Change this Directory? Y for Yes,'
                            ' anything else for No: '))
 
     # Proceed with CWD
     if change_cwd.lower() in ('y', 'yes'):
-        get_folder_to_scan()
+        continue_executing = get_folder_to_scan()
         print(f'\nThe current working directory is now "{os.getcwd()}"\n')
 
-    # Or change CWD to the folder that contains the files that need scanned
+    # Change CWD to the folder that contains the files that need scanned
     else:
-        print(f'\nThe current working directory will stay "{os.getcwd()}"\n')
+        print(f'\nThe current working directory will stay '
+              f'"{os.getcwd()}"\n')
 
     # Discover what to find and replace with
-    find, replacement = find_replace_text()
+    if continue_executing:
+        find, replacement = find_replace_text()
 
     # Build list of files to replace
-    files_to_change = build_file_list_to_scan(find, replacement)
+    if continue_executing:
+        files_to_change = build_file_list_to_scan(find, replacement)
+        if files_to_change == '':
+            continue_executing = False
 
     # Function call to modify the files
-    output_modified_files = modify_files(find, replacement, files_to_change)
+    if continue_executing:
+        output_modified_files = \
+            modify_files(find, replacement, files_to_change)
 
     # Save list of files that were changed to disk
-    save_to_disk(output_modified_files)
+    if continue_executing:
+        save_to_disk(output_modified_files)
 
     # Exit program
     exit_program()
@@ -47,7 +68,7 @@ def get_folder_to_scan():
 
         # If user wants to quit
         if path in ('Q', 'q'):
-            exit_program()
+            return False
 
         #  If user wants to default to the Documents folder
         if path in ('D', 'd'):
@@ -55,12 +76,12 @@ def get_folder_to_scan():
                 os.chdir(os.path.expanduser('~\\Documents'))
             else:
                 os.chdir(os.path.expanduser('~/Documents'))
-            break
+            return True
 
         # Try the user input to see if it's valid
         try:
             os.chdir(path)
-            break
+            return True
 
         except FileNotFoundError:
             print("Path doesn't exist\n")
@@ -127,12 +148,12 @@ def build_file_list_to_scan(find, replacement):
                                        f'Y for yes, anything else to exit: '))
         # Exit program
         if proceed_with_write.casefold() != 'y':
-            exit_program()
+            return ''
 
     else:
         print(f'\nThere are no files ending with '
-              f'extension "{file_extension}."')
-        exit_program()
+              f'extension "{file_extension}."\n')
+        return ''
 
     return files_to_change
 
@@ -182,22 +203,20 @@ def save_to_disk(output_modified_file):
 
     else:
         print('\nYour find/replace criteria yielded no changes. '
-              'No files were modified.')
+              'No files were modified.\n')
 
 
 def exit_program():
     """Cleanly close program, giving time for reading outputs. Or go back to
     the main menu in file_manipulator
-
     """
     print('Do you want to return to the main menu?')
     return_to_file_manipulator = str(input('"Y" for yes. Anything else'
                                            ' for no. '))
-    if return_to_file_manipulator.casefold() == 'y':
-        return None
-    print('\nHave a great day')
-    time.sleep(5)
-    raise SystemExit
+    if return_to_file_manipulator.casefold() != 'y':
+        print('\nHave a great day')
+        time.sleep(5)
+        raise SystemExit
 
 
 if __name__ == "__main__":
