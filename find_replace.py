@@ -1,33 +1,41 @@
 """This program will crawl through files in a given directory
-finding and replacing text in each file"""
+finding and replacing text in each file
+"""
 
 import os
 import time
 
 
+# Main function
 def start():
-    """All other functions will be called from here
+    """This program does bulk find/replace in text Files. All function
+    calls are in if statements. When a user wants to return to the main
+    program continue_executing wil be changed to False so that the
+    program completes and returns to main.
+    Program.
     :Param: Boolean continue_executing: Continue with function calls
     if the user doesn't want to quit
-    :Param: String output_modified_files:
-    find = ''
-    replacement = ''
-    files_to_change = ["""
+    :Param: String output_modified_files: Contains modifiable files
+    :Param: String find: Contains characters to search for
+    :Param: String replacement: Contains the replacement characters
+    :Param: List files_to_change: Files that will be scanned for possible
+     changes to be made
+     """
     continue_executing = True
     output_modified_files = ''
     find = ''
     replacement = ''
     files_to_change = []
 
-    print(f'\nThe currentfiles_to_change = {files_to_change} '
-          f'working directory is "{os.getcwd()}"\n')
+    print(f'\nThe current working directory is "{os.getcwd()}"\n')
     change_cwd = str(input('Change this Directory? Y for Yes,'
                            ' anything else for No: '))
 
     # Proceed with CWD
     if change_cwd.lower() in ('y', 'yes'):
         continue_executing = get_folder_to_scan()
-        print(f'\nThe current working directory is now "{os.getcwd()}"\n')
+        if continue_executing:
+            print(f'\nThe current working directory is now "{os.getcwd()}"\n')
 
     # Change CWD to the folder that contains the files that need scanned
     else:
@@ -44,6 +52,11 @@ def start():
         if files_to_change == '':
             continue_executing = False
 
+    # Change '/' to '\' in files_to_change if on Windows
+    if continue_executing:
+        if os.name == 'nt':
+            files_to_change = os_is_windows(files_to_change)
+
     # Function call to modify the files
     if continue_executing:
         output_modified_files = \
@@ -51,15 +64,15 @@ def start():
 
     # Save list of files that were changed to disk
     if continue_executing:
-        save_to_disk(output_modified_files)
+        save_list_of_changes(output_modified_files)
 
     # Exit program
     exit_program()
 
 
+# Change CWD
 def get_folder_to_scan():
     """Change CWD to the folder that is to be scanned"""
-
     while True:
         # Path variable
         path = str(input('\nPlease enter the path where the files are stored.'
@@ -87,6 +100,7 @@ def get_folder_to_scan():
             print("Path doesn't exist\n")
 
 
+# Get the text to find and what to replace it with
 def find_replace_text():
     """Obtain the text to find and replace"""
     while True:
@@ -100,6 +114,7 @@ def find_replace_text():
     return find, replacement
 
 
+# Create a list of files to scan through
 def build_file_list_to_scan(find, replacement):
     """Build a list of files to scan
     :Param: String find: text to find in the document
@@ -120,44 +135,46 @@ def build_file_list_to_scan(find, replacement):
             for file in filenames:
                 if file.endswith(file_extension):
                     files_to_change.append(file)
-        # Add entries from subdirectories
-        if path != '.' and scan_subdirectories.casefold() == 'y':
-            for file in filenames:
-                if file.endswith(file_extension):
-                    files_to_change.append(os.getcwd() +
-                                           path[1::] + '/' + file)
-    # Change '/' to '\' if on Windows
-    if os.name == 'nt':
-        renaming_list = []
-        for file_name in files_to_change:
-            file_name = file_name.replace('/', '\\')
-            renaming_list.append(file_name)
-        files_to_change = renaming_list
+
+    # Add entries from subdirectories, if requested
+    if scan_subdirectories.casefold() == 'y':
+        for path, _, filenames in os.walk("."):
+            if path != '.':
+                for file in filenames:
+                    if file.endswith(file_extension):
+                        files_to_change.append(os.getcwd() +
+                                               path[1::] + '/' + file)
 
     # Proceed or exit
     if len(files_to_change) > 0:
-        proceed_with_write = str(input(f'\nThe file(s)\n\n{files_to_change}'
-                                       f'\n\nmay be modified.'
-                                       f'\nAll text "{find}" '
-                                       f'will be replaced with '
-                                       f'"{replacement}".'
-                                       f'\n\nIt\'s recommended that you have '
-                                       f'a backup of the files that may be '
-                                       f'modified.'
-                                       f'\n\nDo you wish to proceed? '
-                                       f'Y for yes, anything else to exit: '))
+        proceed = str(input(f'\nThe file(s)\n\n{files_to_change}\n\nmay be '
+                            f'modified.\nAll text "{find}" will be replaced '
+                            f'with "{replacement}".\n\nIt\'s recommended that '
+                            f'you have a backup of the files that may be '
+                            f'modified.\n\nDo you wish to proceed? '
+                            f'Y for yes, anything else to exit: '))
         # Exit program
-        if proceed_with_write.casefold() != 'y':
+        if proceed.casefold() != 'y':
             return ''
+        return files_to_change
 
-    else:
-        print(f'\nThere are no files ending with '
-              f'extension "{file_extension}."\n')
-        return ''
-
-    return files_to_change
+    print(f'\nThere are no files ending with extension "{file_extension}."\n')
+    return ''
 
 
+# Change occurrences of "/" to "\" if running on Windows
+def os_is_windows(files_to_change):
+    """Modify the "/" to "\" if running the program on a Windows OS
+    :Param: List files_to_change: list of files that may be modified
+    """
+    windows_files_to_change = []
+    for file_name in files_to_change:
+        file_name = file_name.replace('/', '\\')
+        windows_files_to_change.append(file_name)
+    return windows_files_to_change
+
+
+# If changes are made in a file, save the file to disk
 def modify_files(find, replacement, files_to_change):
     """This function will write to disk
     :Param: String find: text to find in the document
@@ -184,7 +201,8 @@ def modify_files(find, replacement, files_to_change):
     return output_modified_file
 
 
-def save_to_disk(output_modified_file):
+# Save list of files changed to disk
+def save_list_of_changes(output_modified_file):
     """If files were modified save list to disk
     :Param: String output_modified_file: string with a list of all the files
     that was modified.
@@ -206,11 +224,12 @@ def save_to_disk(output_modified_file):
               'No files were modified.\n')
 
 
+# Exit program with an option of returning to main menu
 def exit_program():
     """Cleanly close program, giving time for reading outputs. Or go back to
     the main menu in file_manipulator
     """
-    print('Do you want to return to the main menu?')
+    print('\nDo you want to return to the main menu?')
     return_to_file_manipulator = str(input('"Y" for yes. Anything else'
                                            ' for no. '))
     if return_to_file_manipulator.casefold() != 'y':
