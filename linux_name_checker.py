@@ -11,15 +11,17 @@ import os
 import time
 
 
+# Main function
 def start():
     """This function starts the program. Gets the directory to scan."""
     # Create loop, user has unlimited attempts to get the path correct
+    continue_executing = True
     if os.name == 'nt':  # Windows OS
-        print("\nThis program is meant to be ran on non-Windows OS."
-              "\nClosing the program.")
-        exit_program()
+        print("\nThis program is meant to be ran on a non-Windows OS."
+              "\nClosing the program.\n")
+        continue_executing = exit_program()
 
-    while True:
+    while continue_executing:
         print('\nPlease enter a directory to scan for names that '
               'would be considered invalid duplicate in Windows.'
               '\nOr simply enter D to scan your Documents folder.'
@@ -29,15 +31,15 @@ def start():
         directory_to_scan = str(input())
 
         # Q to quit the program
-        if directory_to_scan in ('q', 'Q'):
-            exit_program()
+        if directory_to_scan.casefold() == 'q':
+            continue_executing = exit_program()
+            continue
 
         # D to  to select Documents folder
-        if directory_to_scan in ('d', 'D'):
+        if directory_to_scan.casefold() == 'd':
             directory_to_scan = os.path.expanduser('~/Documents')
 
         # Verify valid path was entered, if valid call the crawler
-
         try:
             os.chdir(directory_to_scan)
             directory_crawler(directory_to_scan)
@@ -47,13 +49,16 @@ def start():
             print(f"\n'{directory_to_scan}' is not a valid path\n"
                   f"Please try again.")
 
+        # Exit program giving user option to return to main menu
+        exit_program()
 
+
+# Crawl through a directory, looking for files causing issues in WIN OS
 def directory_crawler(top_folder):
     """Builds a list of file and directory names for duplicate
     checking. Scans the directory and sub-directories of the top_folder
     :param str top_folder: filesystem path to begin working in
     """
-
     # list of all scanned directories and files
     directories_and_files = []
     # Contents of this list will be lower case
@@ -87,9 +92,9 @@ def directory_crawler(top_folder):
         build_desktop_file(duplicates, top_folder)
     else:
         print('There were no names found that would conflict in Windows\n')
-    exit_program()
 
 
+# Called from directory_crawler(0), saves list of files on Desktop
 def build_desktop_file(duplicates, directory_to_scan):
     """Given a list of "Windows" duplicate names, will save the list to
     a file on the Desktop.
@@ -97,7 +102,6 @@ def build_desktop_file(duplicates, directory_to_scan):
     :param: List directory_to_scan:
     the directory that was scanned for duplicates
     """
-
     os.chdir(os.path.expanduser('~/Desktop'))
     with open('Problem names in Windows.txt', 'w') as problem_names:
         problem_names.write(f'The conflicts below were found scanning '
@@ -109,6 +113,7 @@ def build_desktop_file(duplicates, directory_to_scan):
               'has been saved on your Desktop\n')
 
 
+# Exit program with an option of returning to main menu
 def exit_program():
     """Cleanly close program, giving time for reading outputs. Or go back to
     the main menu in file_manipulator
@@ -117,11 +122,11 @@ def exit_program():
     return_to_file_manipulator = str(input('"Y" for yes. Anything else'
                                            ' for no. '))
     if return_to_file_manipulator.casefold() == 'y':
-        return None
-    else:
-        print('\nHave a great day')
-        time.sleep(5)
-        raise SystemExit
+        return False
+
+    print('\nHave a great day')
+    time.sleep(5)
+    raise SystemExit
 
 
 if __name__ == "__main__":
