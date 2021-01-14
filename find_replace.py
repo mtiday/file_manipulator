@@ -191,17 +191,21 @@ def modify_files(find, replacement, files_to_change):
 
     # Overwrite only files that change
     for file_to_modify in files_to_change:
-        with open(file_to_modify, 'r') as read_file:
-            filedata = read_file.read()
-        filedata_modified = filedata.replace(find, replacement)
+        try:
+            with open(file_to_modify, 'r') as read_file:
+                filedata = read_file.read()
+            filedata_modified = filedata.replace(find, replacement)
 
-        # If the file will change, proceed
-        if filedata != filedata_modified:
-            # Create a proper non I/O name
-            file_to_overwrite = ''.join(file_to_modify)
-            output_modified_file += file_to_modify + '\n'
-            with open(file_to_overwrite, 'w') as filedata_changes:
-                filedata_changes.write(f"{filedata_modified}")
+            # If the file will change, proceed
+            if filedata != filedata_modified:
+                # Create a proper non I/O name
+                file_to_overwrite = ''.join(file_to_modify)
+                output_modified_file += file_to_modify + '\n'
+                with open(file_to_overwrite, 'w') as filedata_changes:
+                    filedata_changes.write(f"{filedata_modified}")
+        except UnicodeError:
+            print(f"\n{file_to_modify} isn't a Text document.")
+            print("The file won't be scanned")
 
     return output_modified_file
 
@@ -220,31 +224,35 @@ def backup_files_before_modification(find, replacement, files_to_change):
         output_modified_file = os.path.expanduser('~/Desktop')
 
     for file_to_modify in files_to_change:
-        with open(file_to_modify, 'r') as read_file:
-            filedata = read_file.read()
-        filedata_modified = filedata.replace(find, replacement)
+        # Weed out non text files with the try
+        try:
+            with open(file_to_modify, 'r') as read_file:
+                filedata = read_file.read()
+            filedata_modified = filedata.replace(find, replacement)
 
-        # If the file will change, make a copy
-        if filedata != filedata_modified:
-            # Add a slash if file_to_modify doesn't start with one
-            if file_to_modify[0] not in ('/', '\\'):
-                if os.name == 'nt':
-                    file_to_modify = os.getcwd() + '\\' + file_to_modify
-                else:
-                    file_to_modify = os.getcwd() + '/' + file_to_modify
+            # If the file will change, make a copy
+            if filedata != filedata_modified:
+                # Add a slash if file_to_modify doesn't start with one
+                if file_to_modify[0] not in ('/', '\\'):
+                    if os.name == 'nt':
+                        file_to_modify = os.getcwd() + '\\' + file_to_modify
+                    else:
+                        file_to_modify = os.getcwd() + '/' + file_to_modify
 
-            file_to_backup = output_modified_file + file_to_modify
-            path_of_file = os.path.dirname(file_to_backup)
+                file_to_backup = output_modified_file + file_to_modify
+                path_of_file = os.path.dirname(file_to_backup)
 
-            # Create path, if it doesn't exist
-            if not os.path.isdir(path_of_file):
-                try:  # Create more than one directory
-                    os.makedirs(path_of_file)
-                except AttributeError:  # Create one directory
-                    os.mkdir(path_of_file)
+                # Create path, if it doesn't exist
+                if not os.path.isdir(path_of_file):
+                    try:  # Create more than one directory
+                        os.makedirs(path_of_file)
+                    except AttributeError:  # Create one directory
+                        os.mkdir(path_of_file)
 
-            with open(file_to_backup, 'w') as filedata_changes:
-                filedata_changes.write(f"{filedata}")
+                with open(file_to_backup, 'w') as filedata_changes:
+                    filedata_changes.write(f"{filedata}")
+        except UnicodeError:
+            pass
 
 
 # Save list of files changed to disk
