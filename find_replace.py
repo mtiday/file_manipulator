@@ -149,9 +149,8 @@ def build_file_list_to_scan(find, replacement):
     if len(files_to_change) > 0:
         proceed = str(input(f'\nThe file(s)\n\n{files_to_change}\n\nmay be '
                             f'modified.\nAll text "{find}" will be replaced '
-                            f'with "{replacement}".\n\nIt\'s recommended that '
-                            f'you have a backup of the files that may be '
-                            f'modified.\n\nDo you wish to proceed? '
+                            f'with "{replacement}".\n\n'
+                            f'Do you wish to proceed? '
                             f'Y for yes, anything else to exit: '))
         # Exit program
         if proceed.casefold() != 'y':
@@ -183,6 +182,12 @@ def modify_files(find, replacement, files_to_change):
     if String find is found.
     """
     output_modified_file = ''
+    backup_original_file = str(input('\n\nDo you want to copy any file that '
+                                     'will be modified, before it is modified?'
+                                     '\n"Y" for Yes anything else for no: '))
+    # Overwrite only files that change
+    if backup_original_file.casefold() == 'y':
+        backup_files_before_modification(find, replacement, files_to_change)
 
     # Overwrite only files that change
     for file_to_modify in files_to_change:
@@ -199,6 +204,47 @@ def modify_files(find, replacement, files_to_change):
                 filedata_changes.write(f"{filedata_modified}")
 
     return output_modified_file
+
+
+# Backup files before modification, if user desires
+def backup_files_before_modification(find, replacement, files_to_change):
+    """Backup files before modification
+    :Param: String find: text to find in the document
+    :Param: String replacement: found text to be replaced
+    :Param: List files_to_change: files will be scanned for find/replace
+    """
+    # set directory to Desktop folder per Windows or non Windows
+    if os.name == 'nt':
+        output_modified_file = os.path.expanduser('~\\Desktop')
+    else:
+        output_modified_file = os.path.expanduser('~/Desktop')
+
+    for file_to_modify in files_to_change:
+        with open(file_to_modify, 'r') as read_file:
+            filedata = read_file.read()
+        filedata_modified = filedata.replace(find, replacement)
+
+        # If the file will change, make a copy
+        if filedata != filedata_modified:
+            # Add a slash if file_to_modify doesn't start with one
+            if file_to_modify[0] not in ('/', '\\'):
+                if os.name == 'nt':
+                    file_to_modify = os.getcwd() + '\\' + file_to_modify
+                else:
+                    file_to_modify = os.getcwd() + '/' + file_to_modify
+
+            file_to_backup = output_modified_file + file_to_modify
+            path_of_file = os.path.dirname(file_to_backup)
+
+            # Create path, if it doesn't exist
+            if not os.path.isdir(path_of_file):
+                try:  # Create more than one directory
+                    os.makedirs(path_of_file)
+                except AttributeError:  # Create one directory
+                    os.mkdir(path_of_file)
+
+            with open(file_to_backup, 'w') as filedata_changes:
+                filedata_changes.write(f"{filedata}")
 
 
 # Save list of files changed to disk
