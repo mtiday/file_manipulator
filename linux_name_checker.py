@@ -42,15 +42,15 @@ def start():
         # Verify valid path was entered, if valid call the crawler
         try:
             os.chdir(directory_to_scan)
-            directory_crawler(directory_to_scan)
+            continue_executing = directory_crawler(directory_to_scan)
 
         # Raise exception if directory isn't valid
         except FileNotFoundError:
             print(f"\n'{directory_to_scan}' is not a valid path\n"
                   f"Please try again.")
 
-        # Exit program giving user option to return to main menu
-        exit_program()
+    # Exit program giving user option to return to main menu
+    exit_program()
 
 
 # Crawl through a directory, looking for files causing issues in WIN OS
@@ -92,6 +92,7 @@ def directory_crawler(top_folder):
         build_desktop_file(duplicates, top_folder)
     else:
         print('There were no names found that would conflict in Windows\n')
+    return False
 
 
 # Called from directory_crawler(0), saves list of files on Desktop
