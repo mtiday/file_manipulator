@@ -191,6 +191,7 @@ def modify_files(find, replacement, files_to_change):
 
     # Overwrite only files that change
     for file_to_modify in files_to_change:
+        # Weed out non text files with the try
         try:
             with open(file_to_modify, 'r') as read_file:
                 filedata = read_file.read()
