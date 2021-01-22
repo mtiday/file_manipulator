@@ -32,7 +32,7 @@ def start():
                            ' anything else for No: '))
 
     # Proceed with CWD
-    if change_cwd.lower() in ('y', 'yes'):
+    if change_cwd.lower() == 'y':
         continue_executing = get_folder_to_scan()
         if continue_executing:
             print(f'\nThe current working directory is now "{os.getcwd()}"\n')
@@ -51,11 +51,6 @@ def start():
         files_to_change = build_file_list_to_scan(find, replacement)
         if files_to_change == '':
             continue_executing = False
-
-    # Change '/' to '\' in files_to_change if on Windows
-    if continue_executing:
-        if os.name == 'nt':
-            files_to_change = os_is_windows(files_to_change)
 
     # Function call to modify the files
     if continue_executing:
@@ -80,15 +75,13 @@ def get_folder_to_scan():
                          ' "Q" to quit. '))
 
         # If user wants to quit
-        if path in ('Q', 'q'):
+        if path.casefold() == 'q':
             return False
 
         #  If user wants to default to the Documents folder
-        if path in ('D', 'd'):
-            if os.name == 'nt':  # Windows
-                os.chdir(os.path.expanduser('~\\Documents'))
-            else:
-                os.chdir(os.path.expanduser('~/Documents'))
+        if path.casefold() == 'd':
+            os.chdir(os.path.join(os.path.expanduser('~'), 'Documents'))
+
             return True
 
         # Try the user input to see if it's valid
@@ -108,7 +101,7 @@ def find_replace_text():
         replacement = str(input('What is the new text you want to add? '))
         keep_entries = str(input(f'\nReplace "{find}" with "{replacement}"'
                                  f'\nY for Yes, anything else for No '))
-        if keep_entries.lower() in ('y', 'yes'):
+        if keep_entries.lower() == 'y':
             break
 
     return find, replacement
@@ -161,18 +154,6 @@ def build_file_list_to_scan(find, replacement):
     return ''
 
 
-# Change occurrences of "/" to "\" if running on Windows
-def os_is_windows(files_to_change):
-    """Modify the "/" to "\" if running the program on a Windows OS
-    :Param: List files_to_change: list of files that may be modified
-    """
-    windows_files_to_change = []
-    for file_name in files_to_change:
-        file_name = file_name.replace('/', '\\')
-        windows_files_to_change.append(file_name)
-    return windows_files_to_change
-
-
 # If changes are made in a file, save the file to disk
 def modify_files(find, replacement, files_to_change):
     """This function will write to disk
@@ -218,11 +199,7 @@ def backup_files_before_modification(find, replacement, files_to_change):
     :Param: String replacement: found text to be replaced
     :Param: List files_to_change: files will be scanned for find/replace
     """
-    # set directory to Desktop folder per Windows or non Windows
-    if os.name == 'nt':
-        output_modified_file = os.path.expanduser('~\\Desktop')
-    else:
-        output_modified_file = os.path.expanduser('~/Desktop')
+    output_modified_file = os.path.join(os.path.expanduser('~'), 'Desktop')
 
     for file_to_modify in files_to_change:
         # Weed out non text files with the try
@@ -235,10 +212,7 @@ def backup_files_before_modification(find, replacement, files_to_change):
             if filedata != filedata_modified:
                 # Add a slash if file_to_modify doesn't start with one
                 if file_to_modify[0] not in ('/', '\\'):
-                    if os.name == 'nt':
-                        file_to_modify = os.getcwd() + '\\' + file_to_modify
-                    else:
-                        file_to_modify = os.getcwd() + '/' + file_to_modify
+                    file_to_modify = os.path.join(os.getcwd(), file_to_modify)
 
                 file_to_backup = output_modified_file + file_to_modify
                 path_of_file = os.path.dirname(file_to_backup)
@@ -249,9 +223,11 @@ def backup_files_before_modification(find, replacement, files_to_change):
                         os.makedirs(path_of_file)
                     except AttributeError:  # Create one directory
                         os.mkdir(path_of_file)
-
+                # Create a copy of the file that will change
                 with open(file_to_backup, 'w') as filedata_changes:
                     filedata_changes.write(f"{filedata}")
+
+        # If file isn't a text file it will generate a UnicodeError
         except UnicodeError:
             pass
 
@@ -269,8 +245,11 @@ def save_list_of_changes(output_modified_file):
             print('\nThere was 1 file modified')
         else:
             print(f'\nThere were {changed_file_count} files modified.')
-        print(f'\nThe list of changes are saved in folder'
-              f' {os.getcwd()}, named "0_modified_files.txt".\n')
+
+        print(f'\nThe list of changes are saved on your Desktop as '
+              f'"0_modified_files.txt".\n')
+        os.chdir(os.path.join(os.path.expanduser('~'), 'Desktop'))
+
         with open('0_modified_files.txt', 'w') as modified_file_list:
             modified_file_list.write(f'{output_modified_file}')
 
