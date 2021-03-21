@@ -32,7 +32,7 @@ def start():
 
         # Q to quit the program
         if directory_to_scan.casefold() == 'q':
-            continue_executing = exit_program()
+            continue_executing = False
             continue
 
         # D to  to select Documents folder
