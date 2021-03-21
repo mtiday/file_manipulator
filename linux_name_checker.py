@@ -19,7 +19,7 @@ def start():
     if os.name == 'nt':  # Windows OS
         print("\nThis program is meant to be ran on a non-Windows OS."
               "\nClosing the program.\n")
-        continue_executing = exit_program()
+        continue_executing = False
 
     while continue_executing:
         print('\nPlease enter a directory to scan for names that '
@@ -81,7 +81,7 @@ def directory_crawler(top_folder):
 
     # Make everything in the list the same case
     for path in directories_and_files:
-        directories_and_files_lower.append(path.lower())
+        directories_and_files_lower.append(path.casefold())
 
     # Create a list of that Windows would consider duplicates
     for entry, lc_entry in zip(directories_and_files,
