@@ -4,6 +4,8 @@ finding and replacing text in each file
 
 import os
 import time
+import shutil
+from icecream import ic
 
 
 # Main function
@@ -32,7 +34,7 @@ def start():
                            ' anything else for No: '))
 
     # Proceed with CWD
-    if change_cwd.lower() == 'y':
+    if change_cwd.casefold() == 'y':
         continue_executing = get_folder_to_scan()
         if continue_executing:
             print(f'\nThe current working directory is now "{os.getcwd()}"\n')
@@ -90,7 +92,7 @@ def get_folder_to_scan():
             return True
 
         except FileNotFoundError:
-            print("Path doesn't exist\n")
+            print('Path doesn\'t exist\n')
 
 
 # Get the text to find and what to replace it with
@@ -101,7 +103,7 @@ def find_replace_text():
         replacement = str(input('What is the new text you want to add? '))
         keep_entries = str(input(f'\nReplace "{find}" with "{replacement}"'
                                  f'\nY for Yes, anything else for No '))
-        if keep_entries.lower() == 'y':
+        if keep_entries.casefold() == 'y':
             break
 
     return find, replacement
@@ -123,7 +125,7 @@ def build_file_list_to_scan(find, replacement):
                                     'for yes: '))
 
     # Add files to files_to_change list
-    for path, _, filenames in os.walk("."):
+    for path, _, filenames in os.walk('.'):
         if path == '.':
             for file in filenames:
                 if file.endswith(file_extension):
@@ -131,12 +133,16 @@ def build_file_list_to_scan(find, replacement):
 
     # Add entries from subdirectories, if requested
     if scan_subdirectories.casefold() == 'y':
-        for path, _, filenames in os.walk("."):
+        for path, _, filenames in os.walk('.'):
             if path != '.':
                 for file in filenames:
                     if file.endswith(file_extension):
-                        files_to_change.append(os.getcwd() +
-                                               path[1::] + '/' + file)
+                        # normpath>path.join to normalize os.getcwd()
+                        # to work in windows.
+                        file_to_add = os.path.normpath(
+                            os.path.join(os.getcwd(), path[::], file))
+                        # remove \\ for Windows
+                        files_to_change.append(file_to_add.replace('\\', '/'))
 
     # Proceed or exit
     if len(files_to_change) > 0:
@@ -166,9 +172,10 @@ def modify_files(find, replacement, files_to_change):
     backup_original_file = str(input('\n\nDo you want to copy any file that '
                                      'will be modified, before it is modified?'
                                      '\n"Y" for Yes anything else for no: '))
-    # Overwrite only files that change
+    # If chosen, backup files before modifying
     if backup_original_file.casefold() == 'y':
         backup_files_before_modification(find, replacement, files_to_change)
+    time.sleep(30)
 
     # Overwrite only files that change
     for file_to_modify in files_to_change:
@@ -184,10 +191,13 @@ def modify_files(find, replacement, files_to_change):
                 file_to_overwrite = ''.join(file_to_modify)
                 output_modified_file += file_to_modify + '\n'
                 with open(file_to_overwrite, 'w') as filedata_changes:
-                    filedata_changes.write(f"{filedata_modified}")
+                    filedata_changes.write(f'{filedata_modified}')
         except UnicodeError:
-            print(f"\n{file_to_modify} isn't a Text document.")
-            print("The file won't be scanned")
+            print(f'\n{file_to_modify} isn\'t a Text document.')
+            print('The file won\'t be scanned')
+            output_modified_file += \
+                'The non-text file ' + file_to_modify +\
+                ' won\'t be changed' + '\n'
 
     return output_modified_file
 
@@ -199,33 +209,38 @@ def backup_files_before_modification(find, replacement, files_to_change):
     :Param: String replacement: found text to be replaced
     :Param: List files_to_change: files will be scanned for find/replace
     """
-    output_modified_file = os.path.join(os.path.expanduser('~'), 'Desktop')
 
     for file_to_modify in files_to_change:
+        # Variable for maintaining the location data of modified file
+        folder_structure_of_file_copied = file_to_modify
+        folder_structure_of_file_copied =\
+            os.path.join(os.getcwd(), folder_structure_of_file_copied)
+        make_folder = os.path.join(os.path.expanduser('~/Desktop'),
+                                   folder_structure_of_file_copied)
+        if os.name == 'nt':
+            folder_structure_of_file_copied = \
+                folder_structure_of_file_copied.replace(':', ';')
+            folder_structure_of_file_copied = \
+                folder_structure_of_file_copied.replace('\\', '/')
+            make_folder = make_folder.replace('\\', '/')
+        ic(folder_structure_of_file_copied)
+        ic(make_folder)
         # Weed out non text files with the try
         try:
             with open(file_to_modify, 'r') as read_file:
                 filedata = read_file.read()
+
             filedata_modified = filedata.replace(find, replacement)
 
             # If the file will change, make a copy
             if filedata != filedata_modified:
-                # Add a slash if file_to_modify doesn't start with one
-                if file_to_modify[0] not in ('/', '\\'):
-                    file_to_modify = os.path.join(os.getcwd(), file_to_modify)
-
-                file_to_backup = output_modified_file + file_to_modify
-                path_of_file = os.path.dirname(file_to_backup)
+                # Remove the ":" from the string
 
                 # Create path, if it doesn't exist
-                if not os.path.isdir(path_of_file):
-                    try:  # Create more than one directory
-                        os.makedirs(path_of_file)
-                    except AttributeError:  # Create one directory
-                        os.mkdir(path_of_file)
-                # Create a copy of the file that will change
-                with open(file_to_backup, 'w') as filedata_changes:
-                    filedata_changes.write(f"{filedata}")
+                if not os.path.isdir(make_folder):
+                    os.makedirs(make_folder)
+
+            shutil.copy(file_to_modify, os.path.expanduser('~/Desktop'))
 
         # If file isn't a text file it will generate a UnicodeError
         except UnicodeError:
@@ -246,8 +261,8 @@ def save_list_of_changes(output_modified_file):
         else:
             print(f'\nThere were {changed_file_count} files modified.')
 
-        print(f'\nThe list of changes are saved on your Desktop as '
-              f'"0_modified_files.txt".\n')
+        print('\nThe list of changes are saved on your Desktop as '
+              '"0_modified_files.txt".\n')
         os.chdir(os.path.join(os.path.expanduser('~'), 'Desktop'))
 
         with open('0_modified_files.txt', 'w') as modified_file_list:
@@ -272,5 +287,6 @@ def exit_program():
         raise SystemExit
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     start()
+    ic('ttt')
