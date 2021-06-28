@@ -1,11 +1,10 @@
 """This program will crawl through files in a given directory
 finding and replacing text in each file
 """
-
+import io
 import os
 import time
-import shutil
-from icecream import ic
+from shutil import copyfile
 
 
 # Main function
@@ -93,6 +92,9 @@ def get_folder_to_scan():
 
         except FileNotFoundError:
             print('Path doesn\'t exist\n')
+        except OSError:
+            print('The filename, directory name, '
+                  'or volume label syntax is incorrect\n')
 
 
 # Get the text to find and what to replace it with
@@ -129,7 +131,12 @@ def build_file_list_to_scan(find, replacement):
         if path == '.':
             for file in filenames:
                 if file.endswith(file_extension):
-                    files_to_change.append(file)
+                    # normpath>path.join to normalize os.getcwd()
+                    # to work in windows.
+                    file_to_add = os.path.normpath(os.path.join(os.getcwd(),
+                                                                file))
+                    # remove \\ for Windows
+                    files_to_change.append(file_to_add.replace('\\', '/'))
 
     # Add entries from subdirectories, if requested
     if scan_subdirectories.casefold() == 'y':
@@ -160,7 +167,7 @@ def build_file_list_to_scan(find, replacement):
     return ''
 
 
-# If changes are made in a file, save the file to disk
+# If changes are made in a file, save the changes  to disk
 def modify_files(find, replacement, files_to_change):
     """This function will write to disk
     :Param: String find: text to find in the document
@@ -168,94 +175,91 @@ def modify_files(find, replacement, files_to_change):
     :Param: List files_to_change: files that will be scanned and modified
     if String find is found.
     """
-    output_modified_file = ''
+    string_of_modified_files = ''
     backup_original_file = str(input('\n\nDo you want to copy any file that '
                                      'will be modified, before it is modified?'
                                      '\n"Y" for Yes anything else for no: '))
-    # If chosen, backup files before modifying
-    if backup_original_file.casefold() == 'y':
-        backup_files_before_modification(find, replacement, files_to_change)
-    time.sleep(30)
 
     # Overwrite only files that change
     for file_to_modify in files_to_change:
+
         # Weed out non text files with the try
         try:
             with open(file_to_modify, 'r') as read_file:
                 filedata = read_file.read()
             filedata_modified = filedata.replace(find, replacement)
 
-            # If the file will change, proceed
+            # If the file will change, proceed with file modification
             if filedata != filedata_modified:
+
+                # if user wants to back file up before modifying
+                if backup_original_file.casefold() == 'y':
+                    backup_files_before_modification(file_to_modify)
+
                 # Create a proper non I/O name
                 file_to_overwrite = ''.join(file_to_modify)
-                output_modified_file += file_to_modify + '\n'
+                # Add file changed to list of files modified
+                string_of_modified_files += file_to_modify + '\n'
                 with open(file_to_overwrite, 'w') as filedata_changes:
                     filedata_changes.write(f'{filedata_modified}')
         except UnicodeError:
             print(f'\n{file_to_modify} isn\'t a Text document.')
             print('The file won\'t be scanned')
-            output_modified_file += \
+            string_of_modified_files += \
                 'The non-text file ' + file_to_modify +\
                 ' won\'t be changed' + '\n'
 
-    return output_modified_file
+        except PermissionError:
+            print(f'\nYou don\'t have permission to modify {file_to_modify}.')
+            string_of_modified_files += 'You don\'t have permissions' \
+                                        ' to modify ' + file_to_modify + '.\n'
+
+        except io.UnsupportedOperation:
+            print(f'\nYou don\'t have permission to modify {file_to_modify}.')
+            string_of_modified_files += 'You don\'t have permissions' \
+                                        ' to modify ' + file_to_modify + '.\n'
+
+    return string_of_modified_files
 
 
-# Backup files before modification, if user desires
-def backup_files_before_modification(find, replacement, files_to_change):
-    """Backup files before modification
-    :Param: String find: text to find in the document
-    :Param: String replacement: found text to be replaced
-    :Param: List files_to_change: files will be scanned for find/replace
+# Backup files before modification, if user chooses
+def backup_files_before_modification(file_to_modify):
+    """Backup files before modification.  Files will be saved on the Desktop,
+    maintaining the folder structure of original file.
+    :Param: List file_to_modify
     """
 
-    for file_to_modify in files_to_change:
-        # Variable for maintaining the location data of modified file
-        folder_structure_of_file_copied = file_to_modify
-        folder_structure_of_file_copied =\
-            os.path.join(os.getcwd(), folder_structure_of_file_copied)
-        make_folder = os.path.join(os.path.expanduser('~/Desktop'),
-                                   folder_structure_of_file_copied)
-        if os.name == 'nt':
-            folder_structure_of_file_copied = \
-                folder_structure_of_file_copied.replace(':', ';')
-            folder_structure_of_file_copied = \
-                folder_structure_of_file_copied.replace('\\', '/')
-            make_folder = make_folder.replace('\\', '/')
-        ic(folder_structure_of_file_copied)
-        ic(make_folder)
-        # Weed out non text files with the try
-        try:
-            with open(file_to_modify, 'r') as read_file:
-                filedata = read_file.read()
+    # Separate path and filename
+    path_filename_split = os.path.split(file_to_modify)
 
-            filedata_modified = filedata.replace(find, replacement)
+    # If folder doesn't exist, create folder to save file,
+    # removing any colons ":", and replacing \\ with /.
+    desktop = os.path.expanduser('~/Desktop')
+    # Add a '/' if ran on a Windows OS.
+    if os.name == 'nt':
+        desktop = os.path.expanduser('~/Desktop/')
+    filename_original_path = path_filename_split[0].replace(':', ';')
+    folder_to_save_file_to_modify = (desktop + filename_original_path).\
+        replace('\\', '/')
 
-            # If the file will change, make a copy
-            if filedata != filedata_modified:
-                # Remove the ":" from the string
+    if not os.path.isdir(folder_to_save_file_to_modify):
+        os.makedirs(folder_to_save_file_to_modify)
 
-                # Create path, if it doesn't exist
-                if not os.path.isdir(make_folder):
-                    os.makedirs(make_folder)
-
-            shutil.copy(file_to_modify, os.path.expanduser('~/Desktop'))
-
-        # If file isn't a text file it will generate a UnicodeError
-        except UnicodeError:
-            pass
+    # Save pre-modified file_to_modify.
+    new_path_for_file_to_modify =\
+        os.path.join(folder_to_save_file_to_modify, path_filename_split[1])
+    copyfile(file_to_modify, new_path_for_file_to_modify)
 
 
 # Save list of files changed to disk
-def save_list_of_changes(output_modified_file):
+def save_list_of_changes(string_of_modified_files):
     """If files were modified save list to disk
-    :Param: String output_modified_file: string with a list of all the files
-    that was modified.
+    :Param: String string_of_modified_files:
+    string with a list of all the files that was modified.
     """
-    if len(output_modified_file) > 0:
+    if len(string_of_modified_files) > 0:
         # Print the number of files changed
-        changed_file_count = output_modified_file.count('\n')
+        changed_file_count = string_of_modified_files.count('\n')
         if changed_file_count == 1:
             print('\nThere was 1 file modified')
         else:
@@ -265,8 +269,8 @@ def save_list_of_changes(output_modified_file):
               '"0_modified_files.txt".\n')
         os.chdir(os.path.join(os.path.expanduser('~'), 'Desktop'))
 
-        with open('0_modified_files.txt', 'w') as modified_file_list:
-            modified_file_list.write(f'{output_modified_file}')
+        with open('0_list_of_files_modified.txt', 'w') as modified_file_list:
+            modified_file_list.write(f'{string_of_modified_files}')
 
     else:
         print('\nYour find/replace criteria yielded no changes. '
@@ -289,4 +293,3 @@ def exit_program():
 
 if __name__ == '__main__':
     start()
-    ic('ttt')
